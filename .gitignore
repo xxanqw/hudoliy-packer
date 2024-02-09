@@ -4,3 +4,7 @@ main.onefile-build
 main.exe
 main
 app.zip
+.venv
+.DS_Store
+macos/build
+macos/dist
