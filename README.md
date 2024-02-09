@@ -35,3 +35,4 @@
      ```
  - Встановити залежності `pip3 install -r macos/requirements.pip`
  - Запустити скрипт `python3 macos/build.py`
+ - Робота програми на макосі: https://youtu.be/EKCVUx3VsZw?si=SyPVWGh9sR2h47Qd
