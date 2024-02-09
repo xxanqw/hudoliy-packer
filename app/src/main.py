@@ -18,8 +18,6 @@ class Worker(QThread):
                 cmd("7zip\\7za.exe a pack.zip .\pack\*")
             elif target == "linux" or target == "linux2":
                 cmd("7zip/7zz-linux a pack.zip ./pack/*")
-            elif target == "darwin":
-                cmd("7zip/7zz-macos a pack.zip ./pack/*")
             self.finished.emit("Успіх", "Архів zip створено успішно.")
         except Exception as e:
             self.finished.emit("Помилка", f"Не вдалося створити архів zip: {e}")
@@ -51,8 +49,6 @@ class MainWindow(QMainWindow):
             self.setWindowTitle("Hudoliy ResourcePacker GUI for Windows (Qt6)")
         elif target == "linux" or target == "linux2":
             self.setWindowTitle("Hudoliy ResourcePacker GUI for Linux (Qt6)")
-        elif target == "darwin":
-            self.setWindowTitle("Hudoliy ResourcePacker GUI for macOS (Qt6)")    
         self.setFixedSize(517, 250)
         self.setWindowIcon(QIcon("./app/src/pack.ico"))
 
