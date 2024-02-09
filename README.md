@@ -2,18 +2,36 @@
 # Програма для пакування!
 
 ### Як білдити:
-Windows/Linux/MacOS
+**Windows/Linux**
  - Мати встановлений Python [3.11.6](https://www.python.org/downloads/release/python-3116/#:~:text=Python%20community.-,Files,-Version)
- - Рекомендую використовувати venv `python -m venv .venv`
- - Встановити залежності `pip` або `pip3 install -r requirements.pip`
+ - Рекомендую використовувати venv
+    - Windows:
+      ```
+      python -m venv .venv
+      .venv\Source\Activate.ps1
+      ```
+    - Linux:
+      ```
+      python3 -m venv .venv
+      source .venv/bin/activate
+      ```
+ - Встановити залежності
+   - Windows `pip install -r build/requirements.pip`
+   - Linux: `pip3 install -r build/requirements.pip`
  - Для лінукса встановити `patchelf` та `ccache`
-```
-   Arch
-   sudo pacman -S patchelf ccache
-   yay -S patchelf ccache
+    - Arch: `sudo pacman -S patchelf ccache` або `yay -S patchelf ccache`
+    - Debian/Ubuntu: `sudo apt install patchelf ccache`
+ - Запустити скрипт
+   -  Windows: `python build\build.py`
+   -  Linux: `python3 build/build.py`  
 
-   Debian/Ubuntu
-   sudo apt install patchelf ccache
-```
- - Запустити скрипт `python` або `python3 build.py`  
- (ВАЖЛИВО запускати скрипт саме з цієї папки)
+**macOS**
+ - Мати встановлений Python [3.11.6](https://www.python.org/downloads/release/python-3116/#:~:text=Python%20community.-,Files,-Version)
+ - Рекомендую використовувати venv
+   - macOS:
+     ```
+     python3 -m venv .venv
+     source .venv/bin/activate
+     ```
+ - Встановити залежності `pip3 install -r macos/requirements.pip`
+ - Запустити скрипт `python3 macos/build.py`
