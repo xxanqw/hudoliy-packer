@@ -134,9 +134,6 @@ class MainWindow(QMainWindow):
         self.button = QPushButton("Запакувати та обчислити SHA1")
         self.button.clicked.connect(self.handle_button_click)
         self.button_layout.addWidget(self.button)
-        self.button = QPushButton("TEST")
-        self.button.clicked.connect(self.show_downloader)
-        self.button_layout.addWidget(self.button)
 
         self.sha1_label = QLabel("SHA1 буде відображено тут")
 
