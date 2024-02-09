@@ -12,7 +12,7 @@ def build():
     elif target == "linux" or target == "linux2":
         cmd('python -m nuitka --onefile --follow-imports --enable-plugin=pyqt6 -o main --output-dir=../app/ --disable-console --deployment ../app/src/main.py')
     elif target == "darwin":
-        cmd('python -m nuitka --onefile --follow-imports --enable-plugin=pyqt6 -o main --output-dir=../app/ --disable-console --deployment ../app/src/main.py')
+        cmd('python -m nuitka --onefile --follow-imports --enable-plugin=pyqt6 -o main --macos-create-app-bundle --disable-console --deployment ../app/src/main.py')
     print(f"\nЗбірка для {osname()} завершена.\n")
 
 def osname():
