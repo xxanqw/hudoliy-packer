@@ -51,10 +51,10 @@ class DownloadWindow(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Завантажувач худолія")
-        self.setFixedSize(300, 200)
+        self.setFixedSize(350, 150)
         self.setWindowIcon(QIcon("./src/pack.ico"))
 
-        self.whatisdown = QLabel("Оскільки мак має приколи з файлами,\nякі використовуються в цьому проекті,\nвам потрібно завантажити їх самостійно.")
+        self.whatisdown = QLabel("Програма потребує додаткових файлів для роботи.")
         self.wha = QLabel("Жми кнопку, щоб завантажити")
         self.progress_bar = QProgressBar()
         self.download_button = QPushButton("Завантажити")
