@@ -8,20 +8,15 @@ def build():
 
     print(f"\nЗбірка для {osname()}...\n")
     if target == "win32":
-        cmd('python -m nuitka --onefile --follow-imports --enable-plugin=pyqt6 -o main --output-dir=../app/ --windows-icon-from-ico=../app/src/pack.ico --disable-console --deployment --company-name=xxanqw --product-name="Hudoliy ResourcePacker GUI for Windows (Qt6)" --product-version=0.1.20.4 ../app/src/main.py')
+        cmd('python -m nuitka --onefile --follow-imports --enable-plugin=pyqt6 -o main --output-dir=../app/ --windows-icon-from-ico=../app/src/pack.ico --disable-console --deployment --company-name=xxanqw --product-name="Hudoliy ResourcePacker GUI for Windows (Qt6)" --product-version=0.1.20.4 ../app/main.py')
     elif target == "linux" or target == "linux2":
-        cmd('python -m nuitka --onefile --follow-imports --enable-plugin=pyqt6 -o main --output-dir=../app/ --disable-console --deployment ../app/src/main.py')
-    elif target == "darwin":
-        cmd('python -m nuitka --onefile --follow-imports --enable-plugin=pyqt6 -o main --macos-create-app-bundle --disable-console --deployment ../app/src/main.py')
-    print(f"\nЗбірка для {osname()} завершена.\n")
+        cmd('python -m nuitka --onefile --follow-imports --enable-plugin=pyqt6 -o main --output-dir=../app/ --disable-console --deployment ../app/main.py')
 
 def osname():
     if target == "win32":
         return "Windows"
     elif target == "linux" or target == "linux2":
         return "Linux"
-    elif target == "darwin":
-        return "macOS"
 
 def main():
     current_directory = dir()
@@ -41,7 +36,7 @@ def main():
 def cls():
     if target == "win32":
         cmd("cls")
-    if target == "linux" or target == "linux2" or target == "darwin":
+    if target == "linux" or target == "linux2":
         cmd("clear")
 
 if __name__ == "__main__":

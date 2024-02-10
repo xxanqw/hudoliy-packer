@@ -1,17 +1,20 @@
 from hashlib import sha1 as sha
-from sys import argv as args, exit as shutdown
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget, QMessageBox, QMenuBar, QMenu, QHBoxLayout, QProgressBar, QDialog
-from PyQt6.QtCore import QObject, QThread, Qt, pyqtSignal
+from sys import platform as target, argv as args, exit as shutdown
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget, QMessageBox, QMenuBar, QMenu, QHBoxLayout, QDialog, QProgressBar
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from os import system as cmd, path as p
 from PyQt6.QtGui import QIcon, QPixmap, QAction
-from PyQt6.QtCore import QMimeData, QEvent
+from PyQt6.QtCore import QMimeData
 from webbrowser import open as web
-from requests import get as req
 from zipfile import ZipFile as zip
+from requests import get as req
 
 class Cleaner(QThread):
     def run(self):
-        cmd("rm -rf downloads/*")
+        if target == "win32":
+            cmd("del /Q /S downloads")
+        elif target == "linux" or target == "linux2":
+            cmd("rm -rf downloads/*")
 
 class Unzipper(QThread):
     def __init__(self, file, path):
@@ -49,6 +52,7 @@ class DownloadWindow(QDialog):
         super().__init__()
         self.setWindowTitle("Завантажувач худолія")
         self.setFixedSize(300, 200)
+        self.setWindowIcon(QIcon("./src/pack.ico"))
 
         self.whatisdown = QLabel("Оскільки мак має приколи з файлами,\nякі використовуються в цьому проекті,\nвам потрібно завантажити їх самостійно.")
         self.wha = QLabel("Жми кнопку, щоб завантажити")
@@ -90,18 +94,18 @@ class DownloadWindow(QDialog):
         self.progress_bar.setValue(progress)
     
     def chmod(self):
-        cmd("chmod +x 7zip/7zz-macos")
+        cmd("chmod +x 7zip/7zz-linux")
 
     def unzip(self):
-
         self.wha.setText("Розпаковую..")
-        pack_path = "../../../pack"
-        Szip_path = "./7zip"
+        pack_path = "pack"
+        Szip_path = "7zip"
         self.unzipper = Unzipper(path=pack_path, file="downloads/pack.zip")
         self.unzipper.start()
         self.unzip_7zip = Unzipper(path=Szip_path, file="downloads/7zip.zip")
         self.unzip_7zip.start()
-        self.unzip_7zip.finished.connect(self.chmod)
+        if target == "linux" or target == "linux2":
+            self.unzip_7zip.finished.connect(self.chmod)
 
         QMessageBox.information(self, "Успіх", "Файли завантажено та розпаковано успішно.")
         self.clean_up = Cleaner()
@@ -113,6 +117,7 @@ class AdditionalWindow(QDialog):
         super().__init__()
         self.setWindowTitle("Додаткові фішечки")
         self.setFixedSize(400, 200)
+        self.setWindowIcon(QIcon("./src/pack.ico"))
 
         self.desc = QLabel("Це поки що в розробці\nАле вже можна скачати текстурки майна для референсів")
         self.resource = QLabel("Дефолтні текстури майна")
@@ -146,20 +151,22 @@ class AdditionalWindow(QDialog):
 
     def unzip(self):
         self.progress_bar.hide()
-        self.unzipper = Unzipper(path="../../../defaultpack", file="downloads/resources.zip")
+        self.unzipper = Unzipper(path="./defaultpack", file="downloads/resources.zip")
         self.unzipper.start()
         QMessageBox.information(self, "Успіх", "Текстури майна завантажено та розпаковано успішно.")
         self.resource_button.setEnabled(True)
         self.clean_up = Cleaner()
         self.clean_up.start()
 
-
 class Worker(QThread):
     finished = pyqtSignal(str, str)
 
     def run(self):
         try:
-            cmd("7zip/7zz-macos a ../../../pack.zip ../../../pack/*")
+            if target == "win32":
+                cmd("7zip\\7za.exe a pack.zip .\pack\*")
+            elif target == "linux" or target == "linux2":
+                cmd("7zip/7zz-linux a pack.zip ./pack/*")
             self.finished.emit("Успіх", "Архів zip створено успішно.")
         except Exception as e:
             self.finished.emit("Помилка", f"Не вдалося створити архів zip: {e}")
@@ -176,9 +183,9 @@ class Worker(QThread):
             return None
 
     def calculate_sha1(self):
-        sha1 = self.get_sha1("../../../pack.zip")
+        sha1 = self.get_sha1("pack.zip")
         if sha1:
-            with open("../../../sha1.txt", "w") as f:
+            with open("sha1.txt", "w") as f:
                 f.write(sha1)
                 f.close
             return sha1
@@ -187,9 +194,12 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Hudoliy ResourcePacker GUI for macOS (Qt6)")    
-        self.setFixedSize(524, 250)
-        self.setWindowIcon(QIcon("../Resources/src/icon.ico"))
+        if target == "win32":
+            self.setWindowTitle("Hudoliy ResourcePacker GUI for Windows (Qt6)")
+        elif target == "linux" or target == "linux2":
+            self.setWindowTitle("Hudoliy ResourcePacker GUI for Linux (Qt6)")
+        self.setFixedSize(517, 250)
+        self.setWindowIcon(QIcon("./src/pack.ico"))
 
         self.worker = Worker()
         self.worker.finished.connect(self.show_message)
@@ -204,7 +214,7 @@ class MainWindow(QMainWindow):
 
         self.sha1_label = QLabel("SHA1 буде відображено тут")
 
-        logo = QPixmap("../Resources/src/logo.png")
+        logo = QPixmap("./src/logo.png")
         logo = logo.scaledToWidth(500)
         self.logo_label = QLabel()
         self.logo_label.setPixmap(logo)
@@ -223,19 +233,22 @@ class MainWindow(QMainWindow):
         exit_action = QAction("Вихід", self)
         exit_action.setShortcut("Ctrl+Q")
         exit_action.triggered.connect(self.close)
+        exit_action.setIcon(QIcon("./src/logout.png"))
         menu_bar.addMenu(file_menu)
         help_menu = QMenu("Допомога", self)
         github_action = QAction("GitHub", self)
         github_action.triggered.connect(lambda: web('https://github.com/xxanqw/hudoliy-resourcepack'))
+        github_action.setIcon(QIcon("./src/github-logo.png"))
         about_action = QAction("Про програму", self)
         about_action.triggered.connect(self.show_about_dialog)
+        about_action.setIcon(QIcon("./src/info-button.png"))
         help_menu.addAction(github_action)
         help_menu.addAction(about_action)
         menu_bar.addMenu(help_menu)
         file_menu.addAction(exit_action)
         self.setMenuBar(menu_bar)
 
-        if not p.exists("../../../pack") or not p.isdir("7zip"):
+        if not p.exists("pack") or not p.isdir("7zip"):
             self.show_downloader()
 
     def handle_button_click(self):
@@ -266,8 +279,7 @@ class MainWindow(QMainWindow):
         self.additional.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.additional.show()
 
-if __name__ == "__main__":
-    app = QApplication(args)
-    window = MainWindow()
-    window.show()
-    shutdown(app.exec())
+app = QApplication(args)
+window = MainWindow()
+window.show()
+shutdown(app.exec())
