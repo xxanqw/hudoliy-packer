@@ -12,6 +12,8 @@ DATA_FILES = ['src']
 OPTIONS = {}
 
 setup(
+    name="Packer for macOS",
+    version="1.4.8.8",
     app=APP,
     data_files=DATA_FILES,
     options={

@@ -5,10 +5,13 @@ from sys import platform as target
 from requests import get as req
 
 def build():
-    input("\nСкрипт для макосі, бо вона трішки інакша.\nНатисніть Enter щоб почати збірку...")
+    secret = input("\nСкрипт для макосі, бо вона трішки інакша.\nНатисніть Enter щоб почати збірку...")
 
     print(f"\nЗбірка для macOS...\n")
-    cmd("python3 setup.py py2app")
+    if secret == "":
+        cmd("python3 setup.py py2app")
+    elif secret == "228":
+        cmd("python3 setup.py py2app -A")
     print(f"\nЗбірка для macOS завершена.\nФайл збірки знаходиться в папці dist.\n")
     
 def main():

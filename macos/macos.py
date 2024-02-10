@@ -1,13 +1,27 @@
 from hashlib import sha1 as sha
 from sys import argv as args, exit as shutdown
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget, QMessageBox, QMenuBar, QMenu, QHBoxLayout, QProgressBar, QDialog
-from PyQt6.QtCore import QThread, Qt, pyqtSignal
+from PyQt6.QtCore import QObject, QThread, Qt, pyqtSignal
 from os import system as cmd, path as p
 from PyQt6.QtGui import QIcon, QPixmap, QAction
 from PyQt6.QtCore import QMimeData, QEvent
 from webbrowser import open as web
 from requests import get as req
 from zipfile import ZipFile as zip
+
+class Cleaner(QThread):
+    def run(self):
+        cmd("rm -rf downloads/*")
+
+class Unzipper(QThread):
+    def __init__(self, file, path):
+        super().__init__()
+        self.file = file
+        self.path = path
+    
+    def run(self):
+        with zip(self.file, "r") as z:
+            z.extractall(self.path)
 
 class Downloader(QThread):
     progress_updated = pyqtSignal(int)
@@ -53,7 +67,6 @@ class DownloadWindow(QDialog):
         self.download_button.setEnabled(False)
         cmd("mkdir downloads")
         self.pack_down()
-        #self.unzip()
 
     def pack_down(self):
         self.wha.setText("Завантаження pack.zip")
@@ -75,19 +88,69 @@ class DownloadWindow(QDialog):
 
     def update_progress(self, progress):
         self.progress_bar.setValue(progress)
+    
+    def chmod(self):
+        cmd("chmod +x 7zip/7zz-macos")
 
     def unzip(self):
+
         self.wha.setText("Розпаковую..")
         pack_path = "../../../pack"
         Szip_path = "./7zip"
-        with zip("downloads/pack.zip", "r") as z:
-            z.extractall(pack_path)
-        with zip("downloads/7zip.zip", "r") as z:
-            z.extractall(Szip_path)
-        cmd("chmod +x 7zip/7zz-macos")
-        cmd("rm -rf downloads")
-        self.close()
+        self.unzipper = Unzipper(path=pack_path, file="downloads/pack.zip")
+        self.unzipper.start()
+        self.unzip_7zip = Unzipper(path=Szip_path, file="downloads/7zip.zip")
+        self.unzip_7zip.start()
+        self.unzip_7zip.finished.connect(self.chmod)
 
+        QMessageBox.information(self, "Успіх", "Файли завантажено та розпаковано успішно.")
+        self.clean_up = Cleaner()
+        self.clean_up.start()
+        self.clean_up.finished.connect(self.close)
+
+class AdditionalWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Додаткові фішечки")
+        self.setFixedSize(400, 200)
+
+        self.desc = QLabel("Це поки що в розробці\nАле вже можна скачати текстурки майна для референсів")
+        self.resource = QLabel("Дефолтні текстури майна")
+        self.resource_button = QPushButton("Завантажити")
+        self.resource_button.clicked.connect(self.download_resource)
+        self.progress_bar = QProgressBar()
+        self.progress_bar.hide()
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.desc)
+        layout.addStretch()
+        flexlayout = QHBoxLayout()
+        flexlayout.addWidget(self.resource, alignment=Qt.AlignmentFlag.AlignLeft)
+        flexlayout.addWidget(self.resource_button, alignment=Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.progress_bar)
+        layout.addLayout(flexlayout)
+        self.setLayout(layout)
+
+    def download_resource(self):
+        self.resource_button.setEnabled(False)
+        self.progress_bar.show()
+        url = "https://assets.hudoliy.v.ua/resources.zip"
+        name = "resources.zip"
+        self.downloader = Downloader(url, name)
+        self.downloader.progress_updated.connect(self.update_progress)
+        self.downloader.finished.connect(self.unzip)
+        self.downloader.start()
+
+    def update_progress(self, progress):
+        self.progress_bar.setValue(progress)
+
+    def unzip(self):
+        self.progress_bar.hide()
+        self.unzipper = Unzipper(path="../../../defaultpack", file="downloads/resources.zip")
+        QMessageBox.information(self, "Успіх", "Текстури майна завантажено та розпаковано успішно.")
+        self.resource_button.setEnabled(True)
+        self.clean_up = Cleaner()
+        self.clean_up.start()
 
 
 class Worker(QThread):
@@ -124,7 +187,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Hudoliy ResourcePacker GUI for macOS (Qt6)")    
-        self.setFixedSize(517, 250)
+        self.setFixedSize(524, 250)
         self.setWindowIcon(QIcon("../Resources/src/icon.ico"))
 
         self.worker = Worker()
@@ -134,6 +197,9 @@ class MainWindow(QMainWindow):
         self.button = QPushButton("Запакувати та обчислити SHA1")
         self.button.clicked.connect(self.handle_button_click)
         self.button_layout.addWidget(self.button)
+        self.additional_button = QPushButton("Додаткові фішечки")
+        self.additional_button.clicked.connect(self.show_additional)
+        self.button_layout.addWidget(self.additional_button)
 
         self.sha1_label = QLabel("SHA1 буде відображено тут")
 
@@ -193,6 +259,11 @@ class MainWindow(QMainWindow):
         self.downloader = DownloadWindow()
         self.downloader.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.downloader.show()
+
+    def show_additional(self):
+        self.additional = AdditionalWindow()
+        self.additional.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.additional.show()
 
 if __name__ == "__main__":
     app = QApplication(args)
