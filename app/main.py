@@ -97,7 +97,7 @@ class DownloadWindow(QDialog):
 
     def unzip(self):
         self.wha.setText("Розпаковую..")
-        pack_path = "/pack"
+        pack_path = "pack"
         Szip_path = "7zip"
         self.unzipper = Unzipper(path=pack_path, file="downloads/pack.zip")
         self.unzipper.start()
