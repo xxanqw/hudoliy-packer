@@ -192,7 +192,7 @@ class Worker(QThread):
             if target == "win32":
                 cmd("7zip\\7za.exe a pack.zip .\pack\*")
             elif target == "linux" or target == "linux2":
-                cmd("usr/bin/7zip/7zz-linux a pack.zip ../pack/*")
+                cmd("usr/bin/7zip/7zz-linux a ../pack.zip ../pack/*")
             self.finished.emit("Успіх", "Архів zip створено успішно.")
         except Exception as e:
             self.finished.emit("Помилка", f"Не вдалося створити архів zip: {e}")
