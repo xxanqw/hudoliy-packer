@@ -8,7 +8,7 @@
     - Windows:
       ```
       python -m venv .venv
-      .venv\Source\Activate.ps1
+      .venv\Scripts\Activate.ps1
       ```
     - Linux:
       ```
