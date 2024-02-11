@@ -112,8 +112,8 @@ class DownloadWindow(QDialog):
 
     def unzip(self):
         self.wha.setText("Розпаковую..")
-        pack_path = "pack"
-        Szip_path = "7zip"
+        pack_path = "../pack"
+        Szip_path = "usr/bin/7zip"
         if target == "win32":
             self.unzipper = Unzipper(path=pack_path, file="downloads/pack.zip")
         elif target == "linux" or target == "linux2":
@@ -175,9 +175,9 @@ class AdditionalWindow(QDialog):
     def unzip(self):
         self.progress_bar.hide()
         if target == "win32":
-            self.unzipper = Unzipper(path="pack", file="downloads/resources.zip")
+            self.unzipper = Unzipper(path="defaultpack", file="downloads/resources.zip")
         elif target == "linux" or target == "linux2":
-            self.unzipper = Unzipper(path="pack", file="usr/bin/downloads/resources.zip")
+            self.unzipper = Unzipper(path="../defaultpack", file="usr/bin/downloads/resources.zip")
         self.unzipper.start()
         QMessageBox.information(self, "Успіх", "Текстури майна завантажено та розпаковано успішно.")
         self.resource_button.setEnabled(True)
