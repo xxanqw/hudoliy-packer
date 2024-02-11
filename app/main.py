@@ -14,7 +14,7 @@ class Cleaner(QThread):
         if target == "win32":
             cmd("del /Q /S downloads")
         elif target == "linux" or target == "linux2":
-            cmd("rm -rf downloads")
+            cmd("rm -rf downloads/*")
 
 class Unzipper(QThread):
     def __init__(self, file, path):
