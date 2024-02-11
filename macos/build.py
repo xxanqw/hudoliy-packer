@@ -29,6 +29,14 @@ def main():
     else:
         build()
 
+def create_dmg():
+    answer = input("Чи не бажаєте ви створити dmg-файл для Packer for macOS? (Y/n): ")
+    if answer == "Y" or answer == "y" or answer == "":
+        cd("dmg-creation")
+        cmd("python3 dmgcreate.py")
+    else:    
+        print("Дякую за використання скрипта!")
+
 def cls():
     if target == "darwin":
         cmd("clear")
@@ -40,3 +48,4 @@ if __name__ == "__main__":
     else:
         cls()
         main()
+        create_dmg()

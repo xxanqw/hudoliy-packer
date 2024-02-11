@@ -8,3 +8,4 @@ app.zip
 .DS_Store
 macos/build
 macos/dist
+*.dmg
