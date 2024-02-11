@@ -15,7 +15,7 @@ class Cleaner(QThread):
             cmd("del /Q /S downloads")
         elif target == "linux" or target == "linux2":
             cmd("rm -rf downloads")
-            
+
 class Unzipper(QThread):
     def __init__(self, file, path):
         super().__init__()
@@ -97,7 +97,7 @@ class DownloadWindow(QDialog):
 
     def unzip(self):
         self.wha.setText("Розпаковую..")
-        pack_path = "../pack"
+        pack_path = "/pack"
         Szip_path = "7zip"
         self.unzipper = Unzipper(path=pack_path, file="downloads/pack.zip")
         self.unzipper.start()
