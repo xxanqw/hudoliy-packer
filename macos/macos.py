@@ -1,10 +1,10 @@
 from hashlib import sha1 as sha
 from sys import argv as args, exit as shutdown
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget, QMessageBox, QMenuBar, QMenu, QHBoxLayout, QProgressBar, QDialog
-from PyQt6.QtCore import QObject, QThread, Qt, pyqtSignal
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget, QMessageBox, QMenuBar, QMenu, QHBoxLayout, QProgressBar, QDialog, QSpacerItem, QGridLayout
+from PyQt6.QtCore import QThread, Qt, pyqtSignal
 from os import system as cmd, path as p
 from PyQt6.QtGui import QIcon, QPixmap, QAction
-from PyQt6.QtCore import QMimeData, QEvent
+from PyQt6.QtCore import QMimeData
 from webbrowser import open as web
 from requests import get as req
 from zipfile import ZipFile as zip
@@ -54,6 +54,7 @@ class DownloadWindow(QDialog):
         self.wha = QLabel("Жми кнопку, щоб завантажити")
         self.progress_bar = QProgressBar()
         self.download_button = QPushButton("Завантажити")
+        self.download_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.download_button.clicked.connect(self.start_download)
 
         layout = QVBoxLayout()
@@ -61,6 +62,7 @@ class DownloadWindow(QDialog):
         layout.addWidget(self.wha)
         layout.addWidget(self.progress_bar)
         layout.addWidget(self.download_button)
+        layout.setSpacing(0)
         self.setLayout(layout)
 
     def start_download(self):
@@ -112,23 +114,36 @@ class AdditionalWindow(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Додаткові фішечки")
-        self.setFixedSize(400, 200)
+        self.setFixedSize(450, 150)
 
         self.desc = QLabel("Це поки що в розробці\nАле вже можна скачати текстурки майна для референсів")
         self.resource = QLabel("Дефолтні текстури майна")
         self.resource_button = QPushButton("Завантажити")
+        self.resource_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.resource_button.clicked.connect(self.download_resource)
+        self.resource_downloaded = QLabel()
+        self.isdownloded("downloads/resources.zip")
         self.progress_bar = QProgressBar()
         self.progress_bar.hide()
 
+        button_layout = QVBoxLayout()
+        button_layout.setSpacing(0)
+        button_layout.setContentsMargins(0, 0, 0, 0)
+        button_layout.addWidget(self.resource_button, alignment=Qt.AlignmentFlag.AlignBottom)
+        button_layout.addWidget(self.resource_downloaded, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+
+        flexlayout = QGridLayout()
+        flexlayout.setSpacing(0)
+        flexlayout.setContentsMargins(0, 0, 0, 0)
+        flexlayout.addWidget(self.resource, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        flexlayout.addLayout(button_layout, 0, 1)
+
         layout = QVBoxLayout()
+        layout.setSpacing(0)
+        layout.setContentsMargins(10, 0, 10, 0)
         layout.addWidget(self.desc)
-        layout.addStretch()
-        flexlayout = QHBoxLayout()
-        flexlayout.addWidget(self.resource, alignment=Qt.AlignmentFlag.AlignLeft)
-        flexlayout.addWidget(self.resource_button, alignment=Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.progress_bar)
-        layout.addLayout(flexlayout)
+        layout.addLayout(flexlayout)        
         self.setLayout(layout)
 
     def download_resource(self):
@@ -152,6 +167,15 @@ class AdditionalWindow(QDialog):
         self.resource_button.setEnabled(True)
         self.clean_up = Cleaner()
         self.clean_up.start()
+    
+    def isdownloded(self, path):
+        if p.exists(path):
+            self.resource_downloaded.setText("Завантажено")
+            self.resource_downloaded.setStyleSheet("color: green")
+        else:
+            self.resource_downloaded.setText("Не завантажено")
+            self.resource_downloaded.setStyleSheet("color: red")
+
 
 
 class Worker(QThread):
@@ -196,9 +220,11 @@ class MainWindow(QMainWindow):
 
         self.button_layout = QHBoxLayout()
         self.button = QPushButton("Запакувати та обчислити SHA1")
+        self.button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.button.clicked.connect(self.handle_button_click)
         self.button_layout.addWidget(self.button)
         self.additional_button = QPushButton("Додаткові фішечки")
+        self.additional_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.additional_button.clicked.connect(self.show_additional)
         self.button_layout.addWidget(self.additional_button)
 
