@@ -9,3 +9,5 @@ app.zip
 macos/build
 macos/dist
 *.dmg
+build/build
+main.spec
