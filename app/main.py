@@ -35,7 +35,7 @@ class Downloader(QThread):
         self.name = name
 
     def run(self):
-        response = req(self.url, stream=True)
+        response = req(self.url, stream=True, verify=False)
         total_size = int(response.headers.get('Content-Length', 0))
         bytes_downloaded = 0
         with open(f'downloads/{self.name}', 'wb') as file:
@@ -162,7 +162,10 @@ class Worker(QThread):
 
     def run(self):
         try:
-            cmd("7zip\\7za.exe a pack.zip .\pack\*")
+            if target == "win32":
+                cmd("7zip\\7za.exe a pack.zip .\pack\*")
+            elif target == "linux" or target == "linux2":
+                cmd("7zip/7zz-linux a pack.zip ./pack/*")
             self.finished.emit("Успіх", "Архів zip створено успішно.")
         except Exception as e:
             self.finished.emit("Помилка", f"Не вдалося створити архів zip: {e}")
