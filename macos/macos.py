@@ -122,7 +122,7 @@ class AdditionalWindow(QDialog):
         self.resource_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.resource_button.clicked.connect(self.download_resource)
         self.resource_downloaded = QLabel()
-        self.isdownloded("downloads/resources.zip")
+        self.isdownloaded("../../../defaultpack")
         self.progress_bar = QProgressBar()
         self.progress_bar.hide()
 
@@ -160,15 +160,17 @@ class AdditionalWindow(QDialog):
         self.progress_bar.setValue(progress)
 
     def unzip(self):
+        path = "../../../defaultpack"
         self.progress_bar.hide()
         self.unzipper = Unzipper(path="../../../defaultpack", file="downloads/resources.zip")
         self.unzipper.start()
+        self.unzipper.finished.connect(lambda: self.isdownloaded(path))
         QMessageBox.information(self, "Успіх", "Текстури майна завантажено та розпаковано успішно.")
         self.resource_button.setEnabled(True)
         self.clean_up = Cleaner()
         self.clean_up.start()
     
-    def isdownloded(self, path):
+    def isdownloaded(self, path):
         if p.exists(path):
             self.resource_downloaded.setText("Завантажено")
             self.resource_downloaded.setStyleSheet("color: green")
@@ -211,7 +213,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Hudoliy ResourcePacker GUI for macOS (Qt6)")    
+        self.setWindowTitle("Худолій Пакер (macOS)")    
         self.setFixedSize(524, 250)
         self.setWindowIcon(QIcon("../Resources/src/icon.ico"))
 
