@@ -1,6 +1,6 @@
 from hashlib import sha1 as sha
 from sys import platform as target, argv as args, exit as shutdown
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget, QMessageBox, QMenuBar, QMenu, QHBoxLayout, QDialog, QProgressBar
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget, QMessageBox, QMenuBar, QMenu, QHBoxLayout, QDialog, QProgressBar, QGridLayout
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from os import system as cmd, path as p
 from PyQt6.QtGui import QIcon, QPixmap, QAction
@@ -115,24 +115,36 @@ class AdditionalWindow(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Додаткові фішечки")
-        self.setFixedSize(400, 200)
-        self.setWindowIcon(QIcon("./src/pack.ico"))
+        self.setFixedSize(450, 150)
 
         self.desc = QLabel("Це поки що в розробці\nАле вже можна скачати текстурки майна для референсів")
         self.resource = QLabel("Дефолтні текстури майна")
         self.resource_button = QPushButton("Завантажити")
+        self.resource_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.resource_button.clicked.connect(self.download_resource)
+        self.resource_downloaded = QLabel()
+        self.isdownloaded("../../../defaultpack")
         self.progress_bar = QProgressBar()
         self.progress_bar.hide()
 
+        button_layout = QVBoxLayout()
+        button_layout.setSpacing(0)
+        button_layout.setContentsMargins(0, 0, 0, 0)
+        button_layout.addWidget(self.resource_button, alignment=Qt.AlignmentFlag.AlignBottom)
+        button_layout.addWidget(self.resource_downloaded, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+
+        flexlayout = QGridLayout()
+        flexlayout.setSpacing(0)
+        flexlayout.setContentsMargins(0, 0, 0, 0)
+        flexlayout.addWidget(self.resource, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        flexlayout.addLayout(button_layout, 0, 1)
+
         layout = QVBoxLayout()
+        layout.setSpacing(0)
+        layout.setContentsMargins(10, 0, 10, 0)
         layout.addWidget(self.desc)
-        layout.addStretch()
-        flexlayout = QHBoxLayout()
-        flexlayout.addWidget(self.resource, alignment=Qt.AlignmentFlag.AlignLeft)
-        flexlayout.addWidget(self.resource_button, alignment=Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.progress_bar)
-        layout.addLayout(flexlayout)
+        layout.addLayout(flexlayout)        
         self.setLayout(layout)
 
     def download_resource(self):
@@ -149,13 +161,23 @@ class AdditionalWindow(QDialog):
         self.progress_bar.setValue(progress)
 
     def unzip(self):
+        path = "defaultpack"
         self.progress_bar.hide()
         self.unzipper = Unzipper(path="defaultpack", file="downloads/resources.zip")
         self.unzipper.start()
+        self.unzipper.finished.connect(lambda: self.isdownloaded(path))
         QMessageBox.information(self, "Успіх", "Текстури майна завантажено та розпаковано успішно.")
         self.resource_button.setEnabled(True)
         self.clean_up = Cleaner()
         self.clean_up.start()
+    
+    def isdownloaded(self, path):
+        if p.exists(path):
+            self.resource_downloaded.setText("Завантажено")
+            self.resource_downloaded.setStyleSheet("color: green")
+        else:
+            self.resource_downloaded.setText("Не завантажено")
+            self.resource_downloaded.setStyleSheet("color: red")
 
 class Worker(QThread):
     finished = pyqtSignal(str, str)
