@@ -8,6 +8,8 @@ from PyQt6.QtCore import QMimeData
 from webbrowser import open as web
 from zipfile import ZipFile as zip
 from requests import get as req
+import random
+import string
 
 class Cleaner(QThread):
     def run(self):
@@ -51,7 +53,8 @@ class DownloadWindow(QDialog):
         super().__init__()
         self.setWindowTitle("Завантажувач худолія")
         self.setFixedSize(350, 150)
-        self.setWindowIcon(QIcon("./src/pack.ico"))
+        icon = p.join(p.dirname(__file__), "src/pack.ico")
+        self.setWindowIcon(QIcon(icon))
 
         self.whatisdown = QLabel("Програма потребує додаткових файлів.")
         self.wha = QLabel("Жми кнопку, щоб завантажити")
@@ -116,7 +119,8 @@ class AdditionalWindow(QDialog):
         super().__init__()
         self.setWindowTitle("Додаткові фішечки")
         self.setFixedSize(400, 200)
-        self.setWindowIcon(QIcon("./src/pack.ico"))
+        icon = p.join(p.dirname(__file__), "src/pack.ico")
+        self.setWindowIcon(QIcon(icon))
 
         self.desc = QLabel("Це поки що в розробці\nАле вже можна скачати текстурки майна для референсів")
         self.resource = QLabel("Дефолтні текстури майна")
@@ -185,6 +189,22 @@ class Worker(QThread):
                 f.write(sha1)
                 f.close
             return sha1
+        
+    def generate_uuid(self):
+        if not p.exists("uuid.txt"):
+            def generate_random_string(length):
+                letters = string.ascii_letters + string.digits + "-"
+                return ''.join(random.choice(letters) for _ in range(length))
+
+            uuid = f"{generate_random_string(8)}-{generate_random_string(4)}-4{generate_random_string(3)}-{generate_random_string(4)}-{generate_random_string(12)}"
+            if uuid:
+                with open("uuid.txt", "w") as f:
+                    f.write(uuid)
+                    f.close
+            return uuid
+        elif p.exists("uuid.txt"):
+            with open("uuid.txt", "r") as f:
+                return f.read()
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -194,8 +214,9 @@ class MainWindow(QMainWindow):
             self.setWindowTitle("Hudoliy ResourcePacker GUI for Windows (Qt6)")
         elif target == "linux" or target == "linux2":
             self.setWindowTitle("Hudoliy ResourcePacker GUI for Linux (Qt6)")
-        self.setFixedSize(517, 250)
-        self.setWindowIcon(QIcon("./src/pack.ico"))
+        self.setFixedSize(517, 260)
+        icon = p.join(p.dirname(__file__), "src/pack.ico")
+        self.setWindowIcon(QIcon(icon))
 
 
         self.worker = Worker()
@@ -210,8 +231,10 @@ class MainWindow(QMainWindow):
         self.button_layout.addWidget(self.additional_button)
 
         self.sha1_label = QLabel("SHA1 буде відображено тут")
+        self.UUID_label = QLabel("UUID буде відображено тут")
 
-        logo = QPixmap("./src/logo.png")
+        logo_path = p.join(p.dirname(__file__), "src/logo.png")
+        logo = QPixmap(logo_path)
         logo = logo.scaledToWidth(500)
         self.logo_label = QLabel()
         self.logo_label.setPixmap(logo)
@@ -220,6 +243,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.logo_label)
         layout.addLayout(self.button_layout)
         layout.addWidget(self.sha1_label)
+        layout.addWidget(self.UUID_label)
 
         container = QWidget()
         container.setLayout(layout)
@@ -232,7 +256,8 @@ class MainWindow(QMainWindow):
         exit_action = QAction("Вихід", self)
         exit_action.setShortcut("Ctrl+Q")
         exit_action.triggered.connect(self.close)
-        exit_action.setIcon(QIcon("./src/logout.png"))
+        exit_icon = p.join(p.dirname(__file__), "src/logout.png")
+        exit_action.setIcon(QIcon(exit_icon))
 
         menu_bar.addMenu(file_menu)
 
@@ -240,11 +265,13 @@ class MainWindow(QMainWindow):
 
         github_action = QAction("GitHub", self)
         github_action.triggered.connect(lambda: web('https://github.com/xxanqw/hudoliy-resourcepack'))
-        github_action.setIcon(QIcon("./src/github-logo.png"))
+        github_icon = p.join(p.dirname(__file__), "src/github-logo.png")
+        github_action.setIcon(QIcon(github_icon))
 
         about_action = QAction("Про програму", self)
         about_action.triggered.connect(self.show_about_dialog)
-        about_action.setIcon(QIcon("./src/info-button.png"))
+        about_icon = p.join(p.dirname(__file__), "src/info-button.png")
+        about_action.setIcon(QIcon(about_icon))
 
         help_menu.addAction(github_action)
         help_menu.addAction(about_action)
@@ -262,16 +289,18 @@ class MainWindow(QMainWindow):
         reply = QMessageBox.information(self, title, message)
         if reply == QMessageBox.StandardButton.Ok and title == "Успіх" and message == "Архів zip створено успішно.":
             sha1 = self.worker.calculate_sha1()
+            uuid = self.worker.generate_uuid()
             if sha1:
                 self.sha1_label.setText(f"SHA1: {sha1}")
+                self.UUID_label.setText(f"UUID: {uuid}")
                 clipboard = QApplication.clipboard()
                 mimeData = QMimeData()
                 mimeData.setText(sha1)
                 clipboard.setMimeData(mimeData)
-                self.show_message("Успіх", f"SHA1 скопійовано до буфера обміну. Та записано до файлу sha1.txt.")
+                self.show_message("Успіх", f"SHA1 скопійовано до буфера обміну. Та записано до файлу sha1.txt.\nТакож згенеровано UUID та записано до файлу uuid.txt.")
     
     def show_about_dialog(self):
-        QMessageBox.about(self, "Про програму", "Hudoliy ResourcePacker GUI (Qt6)\n\nАвтор: xxanqw\n\nGitHub: https://github.com/xxanqw/hudoliy-resourcepack")
+        QMessageBox.about(self, "Про програму", "Hudoliy ResourcePacker GUI (Qt6)\n\nАвтор: xxanqw\n\nGitHub: https://github.com/xxanqw/hudoliy-packer")
 
     def show_downloader(self):
         self.downloader = DownloadWindow()
