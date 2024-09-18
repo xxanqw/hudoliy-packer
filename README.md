@@ -1,4 +1,4 @@
-![Лого](https://github.com/xxanqw/hudoliy-resourcepack/blob/3e22022f440fbe8a61ce429501d7602c1b17a333/src/logo.png)  
+![Лого](/app/src/logo_part2.png)  
 # Програма для пакування!
 ![](https://img.shields.io/badge/Windows_10--11-Підтримується-darkgreen?logo=Windows&logoColor=white)
 ![](https://img.shields.io/badge/macOS_11+-Підтримується-darkgreen?logo=Apple&logoColor=white)
