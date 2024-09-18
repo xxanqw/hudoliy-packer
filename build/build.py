@@ -8,9 +8,9 @@ def build():
 
     print(f"\nЗбірка для {osname()}...\n")
     if target == "win32":
-        cmd('python -m nuitka --onefile --follow-imports --enable-plugin=pyqt6 -o main --output-dir=../app/ --windows-icon-from-ico=../app/src/pack.ico --disable-console --deployment --company-name=xxanqw --product-name="Hudoliy ResourcePacker GUI for Windows (Qt6)" --product-version=0.1.20.4 --include-data-dir=../app/src=src ../app/main.py')
+        cmd('python -m nuitka --onefile --follow-imports --enable-plugin=pyqt6 -o main --output-dir=../app/ --windows-icon-from-ico=../app/src/pack.ico --windows-console-mode=disable --deployment --company-name=xxanqw --product-name="Hudoliy ResourcePacker GUI for Windows (Qt6)" --product-version=0.1.21.1 --include-data-dir=../app/src=src ../app/main.py')
     elif target == "linux" or target == "linux2":
-        cmd('python -m nuitka --onefile --follow-imports --enable-plugin=pyqt6 -o main --output-dir=../app/ --disable-console --deployment --include-data-dir=../app/src=src ../app/main.py')
+        cmd('python -m nuitka --onefile --follow-imports --enable-plugin=pyqt6 -o main --output-dir=../app/ --deployment --include-data-dir=../app/src=src ../app/main.py')
     print(f"\nЗбірка для {osname()} завершена.\n")
 
 def osname():

@@ -1,18 +1,29 @@
 from hashlib import sha1 as sha
 from sys import platform as target, argv as args, exit as shutdown
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget, QMessageBox, QMenuBar, QMenu, QHBoxLayout, QDialog, QProgressBar
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget, QMessageBox, QMenuBar, QMenu, QHBoxLayout, QDialog, QProgressBar, QComboBox
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from os import system as cmd, path as p
+from os import system as cmd, path as p, walk
 from PyQt6.QtGui import QIcon, QPixmap, QAction
 from PyQt6.QtCore import QMimeData
 from webbrowser import open as web
 from zipfile import ZipFile as zip
 from requests import get as req
 import random
+import pathlib
 import string
 
+file_path = p.dirname(__file__)
+file_path_normal = pathlib.Path(__file__).parent.resolve()
+
+def get_tag():
+    tags = req("https://api.github.com/repos/xxanqw/hudoliy-resourcepack/releases/latest").json()
+    if not p.exists("version.txt"):
+        with open("version.txt", "w") as f:
+            f.write(tags["tag_name"])
+    return tags["tag_name"]
+
 class Cleaner(QThread):
-    def run(self):
+     def run(self):
         if target == "win32":
             cmd("del /Q /S downloads")
         elif target == "linux" or target == "linux2":
@@ -28,6 +39,20 @@ class Unzipper(QThread):
         with zip(self.file, "r") as z:
             z.extractall(self.path)
 
+class Zipper(QThread):
+    def __init__(self, file, path):
+        super().__init__()
+        self.file = file
+        self.path = path
+
+    def run(self):
+        with zip(self.file, "w") as z:
+            for root, dirs, files in walk(self.path):
+                for file in files:
+                    file_path = p.join(root, file)
+                    arcname = p.relpath(file_path, self.path)
+                    z.write(file_path, arcname)
+
 class Downloader(QThread):
     progress_updated = pyqtSignal(int)
 
@@ -37,24 +62,25 @@ class Downloader(QThread):
         self.name = name
 
     def run(self):
-        response = req(self.url, stream=True)
-        total_size = int(response.headers.get('Content-Length', 0))
-        bytes_downloaded = 0
-        with open(f'downloads/{self.name}', 'wb') as file:
-            for chunk in response.iter_content(chunk_size=1024):
-                if chunk:
-                    file.write(chunk)
-                    bytes_downloaded += len(chunk)
-                    progress = int((bytes_downloaded / total_size) * 100)
-                    self.progress_updated.emit(progress)
+        try:
+            response = req(self.url, stream=True)
+            total_size = int(response.headers.get('Content-Length', 0))
+            bytes_downloaded = 0
+            with open(f'downloads/{self.name}', 'wb') as file:
+                for chunk in response.iter_content(chunk_size=1024):
+                    if chunk:
+                        file.write(chunk)
+                        bytes_downloaded += len(chunk)
+                        progress = int((bytes_downloaded / total_size) * 100)
+                        self.progress_updated.emit(progress)
+        except Exception as e:
+            QMessageBox.critical(self, "Помилка", f"Не вдалося завантажити файл: {e}")
 
 class DownloadWindow(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Завантажувач худолія")
         self.setFixedSize(350, 150)
-        icon = p.join(p.dirname(__file__), "src/pack.ico")
-        self.setWindowIcon(QIcon(icon))
 
         self.whatisdown = QLabel("Програма потребує додаткових файлів.")
         self.wha = QLabel("Жми кнопку, щоб завантажити")
@@ -76,97 +102,39 @@ class DownloadWindow(QDialog):
 
     def pack_down(self):
         self.wha.setText("Завантаження pack.zip")
-        url = "https://github.hudoliy.v.ua/"
+        url = "https://github.com/xxanqw/hudoliy-resourcepack/releases/latest/download/pack.zip"
         name = "pack.zip"
-        self.downloader = Downloader(url, name)
-        self.downloader.progress_updated.connect(self.update_progress)
-        self.downloader.finished.connect(self.Szip_down)
-        self.downloader.start()
-
-    def Szip_down(self):
-        self.wha.setText("Завантаження 7zip.zip")
-        url = "https://assets.hudoliy.v.ua/7zip.zip"
-        name = "7zip.zip"
+        self.pack_version = get_tag()
+        with open("version.txt", "w") as f:
+            f.write(self.pack_version)
         self.downloader = Downloader(url, name)
         self.downloader.progress_updated.connect(self.update_progress)
         self.downloader.finished.connect(self.unzip)
-        self.downloader.start()   
+        self.downloader.start()
+        self.downloader.wait()
 
     def update_progress(self, progress):
         self.progress_bar.setValue(progress)
-    
-    def chmod(self):
-        cmd("chmod +x 7zip/7zz-linux")
 
     def unzip(self):
         self.wha.setText("Розпаковую..")
         pack_path = "pack"
-        Szip_path = "7zip"
         self.unzipper = Unzipper(path=pack_path, file="downloads/pack.zip")
         self.unzipper.start()
-        self.unzip_7zip = Unzipper(path=Szip_path, file="downloads/7zip.zip")
-        self.unzip_7zip.start()
-        if target == "linux" or target == "linux2":
-            self.unzip_7zip.finished.connect(self.chmod)
 
-        QMessageBox.information(self, "Успіх", "Файли завантажено та розпаковано успішно.")
+        QMessageBox.information(self, "Успіх", f"Ресурспак завнтажено та розпаковано успішно. ({self.pack_version})")
         self.clean_up = Cleaner()
         self.clean_up.start()
         self.clean_up.finished.connect(self.close)
-
-class AdditionalWindow(QDialog):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Додаткові фішечки")
-        self.setFixedSize(400, 200)
-        icon = p.join(p.dirname(__file__), "src/pack.ico")
-        self.setWindowIcon(QIcon(icon))
-
-        self.desc = QLabel("Це поки що в розробці\nАле вже можна скачати текстурки майна для референсів")
-        self.resource = QLabel("Дефолтні текстури майна")
-        self.resource_button = QPushButton("Завантажити")
-        self.resource_button.clicked.connect(self.download_resource)
-        self.progress_bar = QProgressBar()
-        self.progress_bar.hide()
-
-        layout = QVBoxLayout()
-        layout.addWidget(self.desc)
-        layout.addStretch()
-        flexlayout = QHBoxLayout()
-        flexlayout.addWidget(self.resource, alignment=Qt.AlignmentFlag.AlignLeft)
-        flexlayout.addWidget(self.resource_button, alignment=Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(self.progress_bar)
-        layout.addLayout(flexlayout)
-        self.setLayout(layout)
-
-    def download_resource(self):
-        self.resource_button.setEnabled(False)
-        self.progress_bar.show()
-        url = "https://assets.hudoliy.v.ua/resources.zip"
-        name = "resources.zip"
-        self.downloader = Downloader(url, name)
-        self.downloader.progress_updated.connect(self.update_progress)
-        self.downloader.finished.connect(self.unzip)
-        self.downloader.start()
-
-    def update_progress(self, progress):
-        self.progress_bar.setValue(progress)
-
-    def unzip(self):
-        self.progress_bar.hide()
-        self.unzipper = Unzipper(path="defaultpack", file="downloads/resources.zip")
-        self.unzipper.start()
-        QMessageBox.information(self, "Успіх", "Текстури майна завантажено та розпаковано успішно.")
-        self.resource_button.setEnabled(True)
-        self.clean_up = Cleaner()
-        self.clean_up.start()
 
 class Worker(QThread):
     finished = pyqtSignal(str, str)
 
     def run(self):
         try:
-            cmd("7zip\\7za.exe a pack.zip .\pack\*")
+            zipper = Zipper("pack.zip", "./pack")
+            zipper.start()
+            zipper.wait()
             self.finished.emit("Успіх", "Архів zip створено успішно.")
         except Exception as e:
             self.finished.emit("Помилка", f"Не вдалося створити архів zip: {e}")
@@ -211,13 +179,15 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         if target == "win32":
-            self.setWindowTitle("Hudoliy ResourcePacker GUI for Windows (Qt6)")
+            self.setWindowTitle("Hudoliy Reload")
         elif target == "linux" or target == "linux2":
-            self.setWindowTitle("Hudoliy ResourcePacker GUI for Linux (Qt6)")
-        self.setFixedSize(517, 260)
-        icon = p.join(p.dirname(__file__), "src/pack.ico")
-        self.setWindowIcon(QIcon(icon))
+            self.setWindowTitle("Hudoliy Reload")
+        self.setFixedSize(517, 330)
 
+        self.remote_version = get_tag()
+        if p.exists("version.txt"):
+            with open("version.txt", "r") as f:
+                self.current_version = f.read()
 
         self.worker = Worker()
         self.worker.finished.connect(self.show_message)
@@ -226,14 +196,12 @@ class MainWindow(QMainWindow):
         self.button = QPushButton("Запакувати та обчислити SHA1")
         self.button.clicked.connect(self.handle_button_click)
         self.button_layout.addWidget(self.button)
-        self.additional_button = QPushButton("Додаткові фішечки")
-        self.additional_button.clicked.connect(self.show_additional)
-        self.button_layout.addWidget(self.additional_button)
 
         self.sha1_label = QLabel("SHA1 буде відображено тут")
         self.UUID_label = QLabel("UUID буде відображено тут")
+        self.version = QLabel(f"1.21.1 ({self.current_version})")
 
-        logo_path = p.join(p.dirname(__file__), "src/logo.png")
+        logo_path = p.join(p.dirname(__file__), "src/logo_part2.png")
         logo = QPixmap(logo_path)
         logo = logo.scaledToWidth(500)
         self.logo_label = QLabel()
@@ -244,6 +212,7 @@ class MainWindow(QMainWindow):
         layout.addLayout(self.button_layout)
         layout.addWidget(self.sha1_label)
         layout.addWidget(self.UUID_label)
+        layout.addWidget(self.version)
 
         container = QWidget()
         container.setLayout(layout)
@@ -279,8 +248,14 @@ class MainWindow(QMainWindow):
         file_menu.addAction(exit_action)
         self.setMenuBar(menu_bar)
 
-        if not p.exists("pack") or not p.isdir("7zip"):
+        if not p.exists("pack"):
             self.show_downloader()
+        elif not self.current_version == self.remote_version:
+            if target == "win32":
+                cmd("del /Q /S pack", shell=True)
+            elif target == "linux" or target == "linux2":
+                cmd("rm -rf pack")
+            self.show_downloader(update=True)
 
     def handle_button_click(self):
         self.worker.start()
@@ -302,17 +277,22 @@ class MainWindow(QMainWindow):
     def show_about_dialog(self):
         QMessageBox.about(self, "Про програму", "Hudoliy ResourcePacker GUI (Qt6)\n\nАвтор: xxanqw\n\nGitHub: https://github.com/xxanqw/hudoliy-packer")
 
-    def show_downloader(self):
+    def show_downloader(self, update:bool = False):
         self.downloader = DownloadWindow()
+        if update:
+            self.downloader.setWindowTitle(f"Оновлення до версії {self.remote_version}")
+            self.downloader.whatisdown.setText("Нова версія ресурспаку.")
         self.downloader.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.downloader.show()
 
-    def show_additional(self):
-        self.additional = AdditionalWindow()
-        self.additional.setWindowModality(Qt.WindowModality.ApplicationModal)
-        self.additional.show()
+def run():
+    app = QApplication(args)
+    app.setStyle("Fusion")
+    app.setWindowIcon(QIcon(p.join(p.dirname(__file__), "src/pack.ico")))
+    window = MainWindow()
+    window.show()
+    shutdown(app.exec())
 
-app = QApplication(args)
-window = MainWindow()
-window.show()
-shutdown(app.exec())
+if __name__ == "__main__":
+    run()
+    
